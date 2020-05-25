@@ -1,0 +1,23 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <declare-styleable name="RoundCheckBox">
+        <attr name="rcb_colorTick" format="integer" />
+        <attr name="rcb_colorRound" format="integer" />
+        <attr name="rcb_colorSelected" format="integer" />
+        <attr name="rcb_colorUnSelected" format="integer" />
+        <attr name="rcb_colorShadowSelected" format="integer" />
+        <attr name="rcb_colorShadowUnSelected" format="integer" />
+        <attr name="rcb_animDuration" format="integer" />
+        <attr name="rcb_showShadow" format="boolean" />
+        <attr name="rcb_checked" format="boolean" />
+    </declare-styleable>
+
+</resources>
