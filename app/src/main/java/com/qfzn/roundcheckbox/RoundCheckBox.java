@@ -31,20 +31,27 @@ import androidx.annotation.Nullable;
  * 更新描述
  */
 public class RoundCheckBox extends View implements Checkable {
-    private static final int DEF_ANIM_DURATION = 300;
-    private static final int COLOR_SELECTED = Color.parseColor("#D81B60");
-    private static final int COLOR_UNSELECTED = Color.GRAY;
+    private static final int DEF_ANIM_DURATION          = 300;
+    private static final int COLOR_SELECTED             = Color.parseColor("#D81B60");
+    private static final int COLOR_UNSELECTED           = Color.DKGRAY;
+    private static final float ALPHA_RIPPLE             = 0.10f;
+    private static final float ALPHA_COLOR_SELECTED     = 1f;
+    private static final float ALPHA_COLOR_UNSELECTED   = 0.75f;
 
+    private int mWidth;
+    private int mHeight;
     private int mColorTick;
     private int mColorRound;
     private int mColorBack;
-    private int mColorSelected;
-    private int mColorUnSelected;
-    private int mColorShadowSelected;
-    private int mColorShadowUnSelected;
+    private int mColorSelected;             //选中时checkbox的颜色
+    private int mColorUnSelected;           //反选时checkbox的颜色
+    private int mColorRippleSelected;       //选中时ripple的颜色，默认与
+    private int mColorRippleUnSelected;     //反选时ripple的颜色
 
-    private int   mWidth;
-    private int   mHeight;
+    private float mRippleAlpha;             //ripple颜色的透明度 默认10%
+    private float mColorSelectedAlpha;
+    private float mColorUnSelectedAlpha;
+
     private Paint mTickPaint;
     private Paint mBackPaint;
     private Paint mRoundPaint;
@@ -61,7 +68,7 @@ public class RoundCheckBox extends View implements Checkable {
 
     private boolean mChecked;
     private boolean mDraTick;
-    private boolean mShowShadow;
+    private boolean mShowRipple;            //ripple的开关
 
     private float mRoundVal;
     private float mTickVal;
@@ -71,11 +78,11 @@ public class RoundCheckBox extends View implements Checkable {
 
 
     public RoundCheckBox(Context context) {
-        this(context,null);
+        this(context, null);
     }
 
     public RoundCheckBox(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs , 0);
+        this(context, attrs, 0);
     }
 
     public RoundCheckBox(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
@@ -85,10 +92,13 @@ public class RoundCheckBox extends View implements Checkable {
         mColorRound = typedArray.getColor(R.styleable.RoundCheckBox_rcb_colorRound, 0);
         mColorSelected = typedArray.getColor(R.styleable.RoundCheckBox_rcb_colorSelected, COLOR_SELECTED);
         mColorUnSelected = typedArray.getColor(R.styleable.RoundCheckBox_rcb_colorUnSelected, COLOR_UNSELECTED);
-        mColorShadowSelected = typedArray.getColor(R.styleable.RoundCheckBox_rcb_colorShadowSelected, COLOR_SELECTED);
-        mColorShadowUnSelected = typedArray.getColor(R.styleable.RoundCheckBox_rcb_colorShadowUnSelected, COLOR_UNSELECTED);
+        mColorRippleSelected = typedArray.getColor(R.styleable.RoundCheckBox_rcb_colorRippleSelected, COLOR_SELECTED);
+        mColorRippleUnSelected = typedArray.getColor(R.styleable.RoundCheckBox_rcb_colorRippleUnSelected, COLOR_UNSELECTED);
+        mColorSelectedAlpha = typedArray.getFloat(R.styleable.RoundCheckBox_rcb_colorSelectedAlpha, ALPHA_COLOR_SELECTED);
+        mColorUnSelectedAlpha = typedArray.getFloat(R.styleable.RoundCheckBox_rcb_colorUnSelectedAlpha, ALPHA_COLOR_UNSELECTED);
+        mRippleAlpha = typedArray.getFloat(R.styleable.RoundCheckBox_rcb_rippleAlpha, ALPHA_RIPPLE);
         mAnimDuration = typedArray.getInt(R.styleable.RoundCheckBox_rcb_animDuration, DEF_ANIM_DURATION);
-        mShowShadow = typedArray.getBoolean(R.styleable.RoundCheckBox_rcb_showShadow, true);
+        mShowRipple = typedArray.getBoolean(R.styleable.RoundCheckBox_rcb_showShadow, true);
         mChecked = typedArray.getBoolean(R.styleable.RoundCheckBox_rcb_checked, false);
         typedArray.recycle();
         initConfig();
@@ -104,7 +114,7 @@ public class RoundCheckBox extends View implements Checkable {
     }
 
 
-    private void initConfig(){
+    private void initConfig() {
         mTickPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mTickPaint.setColor(mColorTick);
         mTickPaint.setStyle(Paint.Style.STROKE);
@@ -128,13 +138,13 @@ public class RoundCheckBox extends View implements Checkable {
         mRoundPath = new Path();
         mRoundPath.setFillType(Path.FillType.EVEN_ODD);
 
-        if (mShowShadow){
-            setBackShadow(isChecked()?mColorShadowSelected:mColorShadowUnSelected);
+        if (mShowRipple) {
+            setBackRipple(isChecked() ? mColorRippleSelected : mColorRippleUnSelected);
         }
 
         mRoundVal = isChecked() ? 0f : 1.0f;
         mTickVal = isChecked() ? 1.0f : 0f;
-        mColorBack = isChecked() ? mColorSelected : mColorUnSelected;
+        mColorBack = isChecked() ? getColorWithAlpha(mColorSelectedAlpha, mColorSelected) : getColorWithAlpha(mColorUnSelectedAlpha, mColorUnSelected);
         mBackVal = 1.0f;
 
         setOnClickListener(new OnClickListener() {
@@ -142,9 +152,9 @@ public class RoundCheckBox extends View implements Checkable {
             public void onClick(View view) {
                 toggle();
                 mDraTick = false;
-                if (isChecked()){
+                if (isChecked()) {
                     checkedAnimation();
-                }else {
+                } else {
                     unCheckedAnimation();
                 }
             }
@@ -154,13 +164,13 @@ public class RoundCheckBox extends View implements Checkable {
 
     private void checkedAnimation() {
         ValueAnimator animator = ValueAnimator.ofFloat(1.0f, 0f);
-        animator.setDuration(mAnimDuration/2);
+        animator.setDuration(mAnimDuration / 2);
         animator.setInterpolator(new LinearInterpolator());
         animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 mRoundVal = (float) valueAnimator.getAnimatedValue();
-                mColorBack = getHsvColor(1.0f - mRoundVal ,mColorUnSelected,mColorSelected);
+                mColorBack = getHsvColor(1.0f - mRoundVal, mColorUnSelected, mColorSelected);
                 postInvalidate();
             }
         });
@@ -171,7 +181,7 @@ public class RoundCheckBox extends View implements Checkable {
             public void run() {
                 mDraTick = true;
                 ValueAnimator animator = ValueAnimator.ofFloat(0f, 1.0f);
-                animator.setDuration(mAnimDuration/2);
+                animator.setDuration(mAnimDuration / 2);
                 animator.setInterpolator(new LinearInterpolator());
                 animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
                     @Override
@@ -182,9 +192,9 @@ public class RoundCheckBox extends View implements Checkable {
                 });
                 animator.start();
             }
-        }, mAnimDuration/2);
+        }, mAnimDuration / 2);
 
-        ValueAnimator backAnimator = ValueAnimator.ofFloat(1.0f,0.8f,1.0f);
+        ValueAnimator backAnimator = ValueAnimator.ofFloat(1.0f, 0.8f, 1.0f);
         backAnimator.setDuration(mAnimDuration);
         backAnimator.setInterpolator(new LinearInterpolator());
         backAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -196,13 +206,13 @@ public class RoundCheckBox extends View implements Checkable {
         });
         backAnimator.start();
 
-        if (mShowShadow){
+        if (mShowRipple) {
             postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    setBackShadow(mColorShadowSelected);
+                    setBackRipple(mColorRippleSelected);
                 }
-            },mAnimDuration);
+            }, mAnimDuration);
         }
     }
 
@@ -213,13 +223,13 @@ public class RoundCheckBox extends View implements Checkable {
             @Override
             public void onAnimationUpdate(ValueAnimator valueAnimator) {
                 mRoundVal = (float) valueAnimator.getAnimatedValue();
-                mColorBack = mColorUnSelected;
+                mColorBack = getColorWithAlpha(mColorUnSelectedAlpha, mColorUnSelected);
                 postInvalidate();
             }
         });
         animator.start();
 
-        ValueAnimator backAnimator = ValueAnimator.ofFloat(1.0f,0.8f,1.0f);
+        ValueAnimator backAnimator = ValueAnimator.ofFloat(1.0f, 0.8f, 1.0f);
         backAnimator.setDuration(mAnimDuration);
         backAnimator.setInterpolator(new LinearInterpolator());
         backAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -231,13 +241,13 @@ public class RoundCheckBox extends View implements Checkable {
         });
         backAnimator.start();
 
-        if (mShowShadow){
+        if (mShowRipple) {
             postDelayed(new Runnable() {
                 @Override
                 public void run() {
-                    setBackShadow(mColorShadowUnSelected);
+                    setBackRipple(mColorRippleUnSelected);
                 }
-            },mAnimDuration);
+            }, mAnimDuration);
         }
     }
 
@@ -274,7 +284,7 @@ public class RoundCheckBox extends View implements Checkable {
         mCenterPoint.x = getMeasuredWidth() / 2;
         mCenterPoint.y = getMeasuredHeight() / 2;
 
-        if (mWidth == mHeight){
+        if (mWidth == mHeight) {
             mTickPoints[0].x = Math.round((float) getMeasuredWidth() / 32 * 10);
             mTickPoints[0].y = Math.round((float) getMeasuredHeight() / 32 * 16);
             mTickPoints[1].x = Math.round((float) getMeasuredWidth() / 32 * 14);
@@ -282,14 +292,14 @@ public class RoundCheckBox extends View implements Checkable {
             mTickPoints[2].x = Math.round((float) getMeasuredWidth() / 32 * 21);
             mTickPoints[2].y = Math.round((float) getMeasuredHeight() / 32 * 13);
             mStrokeWidth = mWidth / 16;
-        }else {
-            int min = Math.min(mWidth , mHeight);
+        } else {
+            int min = Math.min(mWidth, mHeight);
             mTickPoints[0].x = Math.round((float) getMeasuredWidth() / 2 - (float) min / 32 * 6);
             mTickPoints[0].y = Math.round((float) getMeasuredHeight() / 2);
             mTickPoints[1].x = Math.round((float) getMeasuredWidth() / 2 - (float) min / 32 * 2);
-            mTickPoints[1].y = Math.round((float) getMeasuredHeight() / 2 + (float) min /32 * 4);
+            mTickPoints[1].y = Math.round((float) getMeasuredHeight() / 2 + (float) min / 32 * 4);
             mTickPoints[2].x = Math.round((float) getMeasuredWidth() / 2 + (float) min / 32 * 5);
-            mTickPoints[2].y = Math.round((float) getMeasuredHeight() / 2 - (float) min /32 * 3);
+            mTickPoints[2].y = Math.round((float) getMeasuredHeight() / 2 - (float) min / 32 * 3);
             mStrokeWidth = min / 16;
         }
         mTickPaint.setStrokeWidth(mStrokeWidth);
@@ -299,17 +309,17 @@ public class RoundCheckBox extends View implements Checkable {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        if (mColorRound == 0){//未定义色值则用裁剪方式绘制,显示背景
+        if (mColorRound == 0) {//未定义色值则用裁剪方式绘制,显示背景
             mRoundPath.reset();
             float backRadius = ((float) Math.min(mWidth, mHeight) / 32 * 11) * mBackVal;
-            mRoundPath.addCircle(mCenterPoint.x, mCenterPoint.y,backRadius, Path.Direction.CW);
+            mRoundPath.addCircle(mCenterPoint.x, mCenterPoint.y, backRadius, Path.Direction.CW);
 
             float roundRadius = ((float) Math.min(mWidth, mHeight) / 32 * 11 - (float) mStrokeWidth) * mRoundVal;
-            mRoundPath.addCircle(mCenterPoint.x, mCenterPoint.y,roundRadius, Path.Direction.CW);
+            mRoundPath.addCircle(mCenterPoint.x, mCenterPoint.y, roundRadius, Path.Direction.CW);
 
             mBackPaint.setColor(mColorBack);
-            canvas.drawPath(mRoundPath,mBackPaint);
-        }else {
+            canvas.drawPath(mRoundPath, mBackPaint);
+        } else {
             mBackPaint.setColor(mColorBack);
             canvas.drawCircle(mCenterPoint.x, mCenterPoint.y,
                     ((float) Math.min(mWidth, mHeight) / 32 * 11) * mBackVal, mBackPaint);
@@ -317,21 +327,21 @@ public class RoundCheckBox extends View implements Checkable {
             float radius = ((float) Math.min(mWidth, mHeight) / 32 * 11 - (float) mStrokeWidth) * mRoundVal;
             canvas.drawCircle(mCenterPoint.x, mCenterPoint.y, radius, mRoundPaint);
         }
-        if (mDraTick && isChecked()){
+        if (mDraTick && isChecked()) {
             mTickLeftPath.reset();
             //drawLeftTick
-            mTickLeftPath.moveTo(mTickPoints[1].x , mTickPoints[1].y);
-            float stopLeftX = ((float) mTickPoints[0].x - mTickPoints[1].x) * mTickVal+ mTickPoints[1].x;
-            float stopLeftY = ((float) mTickPoints[0].y - mTickPoints[1].y) * mTickVal+ mTickPoints[1].y;
-            mTickLeftPath.lineTo(stopLeftX,stopLeftY);
+            mTickLeftPath.moveTo(mTickPoints[1].x, mTickPoints[1].y);
+            float stopLeftX = ((float) mTickPoints[0].x - mTickPoints[1].x) * mTickVal + mTickPoints[1].x;
+            float stopLeftY = ((float) mTickPoints[0].y - mTickPoints[1].y) * mTickVal + mTickPoints[1].y;
+            mTickLeftPath.lineTo(stopLeftX, stopLeftY);
             canvas.drawPath(mTickLeftPath, mTickPaint);
 
             mTickRightPath.reset();
             //drawRightTick
-            mTickRightPath.moveTo(mTickPoints[1].x , mTickPoints[1].y);
-            float stopRightX = ((float) mTickPoints[2].x - mTickPoints[1].x) * mTickVal+ mTickPoints[1].x;
-            float stopRightY = ((float) mTickPoints[2].y - mTickPoints[1].y) * mTickVal+ mTickPoints[1].y;
-            mTickRightPath.lineTo(stopRightX,stopRightY);
+            mTickRightPath.moveTo(mTickPoints[1].x, mTickPoints[1].y);
+            float stopRightX = ((float) mTickPoints[2].x - mTickPoints[1].x) * mTickVal + mTickPoints[1].x;
+            float stopRightY = ((float) mTickPoints[2].y - mTickPoints[1].y) * mTickVal + mTickPoints[1].y;
+            mTickRightPath.lineTo(stopRightX, stopRightY);
             canvas.drawPath(mTickRightPath, mTickPaint);
         }
     }
@@ -344,7 +354,7 @@ public class RoundCheckBox extends View implements Checkable {
 
         mRoundVal = isChecked() ? 0f : 1.0f;
         mTickVal = isChecked() ? 1.0f : 0f;
-        mColorBack = isChecked() ? mColorSelected : mColorUnSelected;
+        mColorBack = isChecked() ? getColorWithAlpha(mColorSelectedAlpha, mColorSelected) : getColorWithAlpha(mColorUnSelectedAlpha, mColorUnSelected);
         mBackVal = 1.0f;
         mDraTick = isChecked();
 
@@ -355,12 +365,12 @@ public class RoundCheckBox extends View implements Checkable {
 
     public void setChecked(boolean checked, boolean animate) {
         if (animate) {
-            if (mChecked != checked){
+            if (mChecked != checked) {
                 mChecked = checked;
                 mDraTick = false;
-                if (checked){
+                if (checked) {
                     checkedAnimation();
-                }else {
+                } else {
                     unCheckedAnimation();
                 }
                 if (mListener != null) {
@@ -382,10 +392,10 @@ public class RoundCheckBox extends View implements Checkable {
         this.setChecked(!mChecked);
     }
 
-    private void setBackShadow(@ColorInt int color){
+    private void setBackRipple(@ColorInt int color) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            setBackground(new RippleDrawable(ColorStateList.valueOf(color),
-                    null,null));
+            setBackground(new RippleDrawable(ColorStateList.valueOf(getColorWithAlpha(mRippleAlpha, color)),
+                    null, null));
         }
     }
 
@@ -399,7 +409,7 @@ public class RoundCheckBox extends View implements Checkable {
                 Resources.getSystem().getDisplayMetrics());
     }
 
-    private static int getHsvColor(float fraction, Integer startValue, Integer endValue) {
+    private int getHsvColor(float fraction, Integer startValue, Integer endValue) {
         float[] startHsv = new float[3];
         float[] endHsv = new float[3];
         float[] outHsv = new float[3];
@@ -427,6 +437,12 @@ public class RoundCheckBox extends View implements Checkable {
         int alpha = startValue >> 24 + (int) ((endValue >> 24 - startValue >> 24) * fraction);
         // 把 HSV 转换回 ARGB 返回
         return Color.HSVToColor(alpha, outHsv);
+    }
+
+    private int getColorWithAlpha(float alpha, int baseColor) {
+        int a = Math.min(255, Math.max(0, (int) (alpha * 255))) << 24;
+        int rgb = 0x00FFFFFF & baseColor;
+        return a + rgb;
     }
 
 }
