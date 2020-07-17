@@ -7,7 +7,7 @@
     tools:context=".MainActivity">
 
     <com.qfzn.roundcheckbox.RoundCheckBox
-        android:id="@+id/checkbox"
+        android:id="@+id/RoundCheckbox"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -16,14 +16,16 @@
         android:layout_height="wrap_content"/>
 
     <com.qfzn.roundcheckbox.RoundCheck
+        android:id="@+id/roundCheck"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toEndOf="@id/checkbox"
+        app:layout_constraintStart_toEndOf="@id/RoundCheckbox"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"/>
 
     <CheckBox
-        app:layout_constraintEnd_toStartOf="@id/checkbox"
+        android:id="@+id/checkBox"
+        app:layout_constraintEnd_toStartOf="@id/RoundCheckbox"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         android:layout_width="wrap_content"

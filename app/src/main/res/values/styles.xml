@@ -10,17 +10,17 @@
 
     <declare-styleable name="RoundCheckBox">
         <attr name="rcb_colorTick" format="integer" />
-        <attr name="rcb_colorRound" format="integer" />
         <attr name="rcb_colorSelected" format="integer" />
         <attr name="rcb_colorUnSelected" format="integer" />
         <attr name="rcb_colorRippleSelected" format="integer" />
         <attr name="rcb_colorRippleUnSelected" format="integer" />
         <attr name="rcb_colorSelectedAlpha" format="float"/>
         <attr name="rcb_colorUnSelectedAlpha" format="float"/>
-        <attr name="rcb_rippleAlpha" format="float"/>
-        <attr name="rcb_animDuration" format="integer" />
+        <attr name="rcb_startAnimDuration" format="integer" />
+        <attr name="rcb_endAnimDuration" format="integer" />
         <attr name="rcb_showShadow" format="boolean" />
         <attr name="rcb_checked" format="boolean" />
+        <attr name="rcb_rippleAlpha" format="float"/>
     </declare-styleable>
 
 </resources>
