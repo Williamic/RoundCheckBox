@@ -18,7 +18,7 @@
         <attr name="rcb_colorUnSelectedAlpha" format="float"/>
         <attr name="rcb_startAnimDuration" format="integer" />
         <attr name="rcb_endAnimDuration" format="integer" />
-        <attr name="rcb_showShadow" format="boolean" />
+        <attr name="rcb_showRipple" format="boolean" />
         <attr name="rcb_checked" format="boolean" />
         <attr name="rcb_rippleAlpha" format="float"/>
     </declare-styleable>

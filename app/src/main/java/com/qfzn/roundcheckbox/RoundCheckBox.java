@@ -98,7 +98,7 @@ public class RoundCheckBox extends View implements Checkable {
         mStartAnimDuration = typedArray.getInt(R.styleable.RoundCheckBox_rcb_startAnimDuration, DEF_START_ANIM_DURATION);
         mEndAnimDuration = typedArray.getInt(R.styleable.RoundCheckBox_rcb_endAnimDuration, DEF_END_ANIM_DURATION);
         mRippleAlpha = typedArray.getFloat(R.styleable.RoundCheckBox_rcb_rippleAlpha, ALPHA_RIPPLE);
-        mShowRipple = typedArray.getBoolean(R.styleable.RoundCheckBox_rcb_showShadow, true);
+        mShowRipple = typedArray.getBoolean(R.styleable.RoundCheckBox_rcb_showRipple, true);
         mChecked = typedArray.getBoolean(R.styleable.RoundCheckBox_rcb_checked, false);
         typedArray.recycle();
         initConfig();
